@@ -438,3 +438,12 @@ func (p *Pdf) Infect(file Parasite) ([]byte, error) {
 
 	return p.contents, nil
 }
+
+func (p *Pdf) Attach(reader io.Reader) ([]byte, error) {
+	b, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(append(p.contents, "\n"...), b...), nil
+}

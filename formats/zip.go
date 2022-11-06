@@ -60,3 +60,12 @@ func (z *Zip) Infect(file Parasite) ([]byte, error) {
 
 	return out.Bytes(), nil
 }
+
+func (z *Zip) Attach(reader io.Reader) ([]byte, error) {
+	b, err := io.ReadAll(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return append(append(z.contents, "\n"...), b...), nil
+}

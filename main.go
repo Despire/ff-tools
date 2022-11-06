@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/Despire/ff-tools/formats"
+	"io"
 	"log"
 	"os"
 )
@@ -50,15 +51,23 @@ func run() error {
 		return err
 	}
 
-	return os.WriteFile(
-		fmt.Sprintf(
-			"%s-%s-combined.%s.%s",
-			os.Args[1],
-			os.Args[2],
-			file1.Format().String(),
-			file2.Format().String(),
-		),
-		out,
-		os.ModePerm,
-	)
+	for i, o := range out {
+		b, _ := io.ReadAll(o)
+		if err := os.WriteFile(
+			fmt.Sprintf(
+				"%d-%s-%s-combined.%s.%s",
+				i,
+				os.Args[1],
+				os.Args[2],
+				file1.Format().String(),
+				file2.Format().String(),
+			),
+			b,
+			os.ModePerm,
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
