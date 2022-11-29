@@ -23,11 +23,39 @@ func Combine(f1 FormatChecker, f2 FormatChecker) ([]io.Reader, error) {
 func pngWrap(png *Png, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
 	case PDF:
-		panic("implemnt me!")
+		var result []io.Reader
+
+		first, err := png.Infect(f2.(Parasite))
+		if err != nil {
+			log.Printf("couldn't infect PNG with PDF skipping")
+		}
+
+		result = append(result, bytes.NewReader(first))
+
+		second, err := png.Attach(f2.(Parasite).Reader())
+		if err != nil {
+			log.Printf("couldn't attach PDF to PNG")
+		}
+
+		return append(result, bytes.NewReader(second)), nil
 	case ZIP:
-		panic("implemnt me!")
+		var result []io.Reader
+
+		first, err := png.Infect(f2.(Parasite))
+		if err != nil {
+			log.Printf("couldn't infect PNG with ZIP skipping")
+		}
+
+		result = append(result, bytes.NewReader(first))
+
+		second, err := png.Attach(f2.(Parasite).Reader())
+		if err != nil {
+			log.Printf("couldn't attach ZIP to PNG")
+		}
+
+		return append(result, bytes.NewReader(second)), nil
 	case PNG:
-		panic("implemnt me!")
+		return nil, errors.New("failed to merge two file of the same type")
 	default:
 		return nil, errors.New("unknown fileformat for f2")
 	}
@@ -36,7 +64,7 @@ func pngWrap(png *Png, f2 FormatChecker) ([]io.Reader, error) {
 func pdfWrap(pdf *Pdf, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
 	case PDF:
-		return nil, errors.New("failed to mergeTemplate two file of the same type")
+		return nil, errors.New("failed to merge two file of the same type")
 	case ZIP:
 		var result []io.Reader
 
@@ -54,7 +82,7 @@ func pdfWrap(pdf *Pdf, f2 FormatChecker) ([]io.Reader, error) {
 
 		return append(result, bytes.NewReader(second)), nil
 	case PNG:
-		panic("implement me!")
+		return nil, errors.New("PNG requires offset at 0 can't attach or inject into PDF")
 	default:
 		return nil, errors.New("unknown fileformat for f2")
 	}
@@ -79,9 +107,9 @@ func zipWrap(z *Zip, f2 FormatChecker) ([]io.Reader, error) {
 
 		return append(result, bytes.NewReader(second)), nil
 	case ZIP:
-		return nil, errors.New("failed to mergeTemplate two files of the same type")
+		return nil, errors.New("failed to merge two files of the same type")
 	case PNG:
-		panic("implement me!")
+		return nil, errors.New("PNG requires offset at 0 can't attach or inject into ZIP")
 	default:
 		return nil, errors.New("unknown fileformat for f2")
 	}

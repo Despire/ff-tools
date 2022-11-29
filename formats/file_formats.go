@@ -20,6 +20,8 @@ func (f FileFormat) String() string {
 		return "pdf"
 	case ZIP:
 		return "zip"
+	case PNG:
+		return "png"
 	default:
 		panic("unknown fileformat")
 	}
