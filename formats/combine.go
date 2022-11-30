@@ -15,8 +15,53 @@ func Combine(f1 FormatChecker, f2 FormatChecker) ([]io.Reader, error) {
 		return zipWrap(f1.(*Zip), f2)
 	case PNG:
 		return pngWrap(f1.(*Png), f2)
+	case JPG:
+		return jpgWrap(f1.(*Jpg), f2)
 	default:
 		return nil, errors.New("unknown fileformat for f1")
+	}
+}
+
+func jpgWrap(jpg *Jpg, f2 FormatChecker) ([]io.Reader, error) {
+	switch f2.Format() {
+	case PDF:
+		var result []io.Reader
+
+		first, err := jpg.Infect(f2.(Parasite))
+		if err != nil {
+			log.Printf("couldn't infect JPG with PDF skipping")
+		}
+
+		result = append(result, bytes.NewReader(first))
+
+		second, err := jpg.Attach(f2.(Parasite).Reader())
+		if err != nil {
+			log.Printf("couldn't attach PDF to JPG")
+		}
+
+		return append(result, bytes.NewReader(second)), nil
+	case ZIP:
+		var result []io.Reader
+
+		first, err := jpg.Infect(f2.(Parasite))
+		if err != nil {
+			log.Printf("couldn't infect JPG with ZIP skipping")
+		}
+
+		result = append(result, bytes.NewReader(first))
+
+		second, err := jpg.Attach(f2.(Parasite).Reader())
+		if err != nil {
+			log.Printf("couldn't attach ZIP to JPG")
+		}
+
+		return append(result, bytes.NewReader(second)), nil
+	case PNG:
+		return nil, errors.New("PNG required offset at 0 can't attach or inject into JPG")
+	case JPG:
+		return nil, errors.New("failed to merge two file of the same type")
+	default:
+		return nil, errors.New("unknown fileformat for f2")
 	}
 }
 
@@ -56,6 +101,8 @@ func pngWrap(png *Png, f2 FormatChecker) ([]io.Reader, error) {
 		return append(result, bytes.NewReader(second)), nil
 	case PNG:
 		return nil, errors.New("failed to merge two file of the same type")
+	case JPG:
+		return nil, errors.New("JPG required offset at 0 can't inject or attach to PNG")
 	default:
 		return nil, errors.New("unknown fileformat for f2")
 	}
@@ -83,6 +130,8 @@ func pdfWrap(pdf *Pdf, f2 FormatChecker) ([]io.Reader, error) {
 		return append(result, bytes.NewReader(second)), nil
 	case PNG:
 		return nil, errors.New("PNG requires offset at 0 can't attach or inject into PDF")
+	case JPG:
+		return nil, errors.New("JPG required offset at 0 can't attach or inject into PDF")
 	default:
 		return nil, errors.New("unknown fileformat for f2")
 	}
@@ -110,6 +159,8 @@ func zipWrap(z *Zip, f2 FormatChecker) ([]io.Reader, error) {
 		return nil, errors.New("failed to merge two files of the same type")
 	case PNG:
 		return nil, errors.New("PNG requires offset at 0 can't attach or inject into ZIP")
+	case JPG:
+		return nil, errors.New("JPG required offset at 0 can't attach or inject into ZIP")
 	default:
 		return nil, errors.New("unknown fileformat for f2")
 	}
