@@ -32,21 +32,28 @@ func (p *Png) Infect(file Parasite) ([]byte, error) {
 		return nil, err
 	}
 
+	i := bytes.Index(p.contents, []byte("IHDR"))
+	if i < 0 {
+		return nil, errors.New("missing IHDR block invalid PNG file")
+	}
+
+	i += len("IHDR") + 13 + 4 // len of IHDR is 13 bytes + 4 bytes of crc32.
+
 	out := make([]byte, 0, len(b)+len(p.contents))
-	out = append(out, PngHeaderStart...)
+	out = append(out, p.contents[:i]...)
 
 	length := make([]byte, 4)
 	binary.BigEndian.PutUint32(length, uint32(len(b)))
 
 	out = append(out, length...)
-	out = append(out, []byte("cOMM")...)
+	out = append(out, []byte("fILE")...)
 	out = append(out, b...)
 
 	checksum := make([]byte, 4)
-	binary.BigEndian.PutUint32(checksum, crc32.ChecksumIEEE(append([]byte("cOMM"), b...)))
+	binary.BigEndian.PutUint32(checksum, crc32.ChecksumIEEE(append([]byte("fILE"), b...)))
 
 	out = append(out, checksum...)
-	out = append(out, p.contents[len(PngHeaderStart):]...)
+	out = append(out, p.contents[i:]...)
 
 	return out, nil
 }
