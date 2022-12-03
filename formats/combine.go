@@ -8,6 +8,28 @@ import (
 	"log"
 )
 
+func tryCombining(i C, p Parasite) ([]io.Reader, error) {
+	var result []io.Reader
+
+	first, err := i.Infect(p)
+	if err == nil {
+		result = append(result, bytes.NewReader(first))
+	}
+	if err != nil {
+		log.Printf("couldn't infect %s with %s skipping", i.Format().String(), p.Format().String())
+	}
+
+	second, err := i.Attach(p.Reader())
+	if err == nil {
+		result = append(result, bytes.NewReader(second))
+	}
+	if err != nil {
+		log.Printf("couldn't attach %s to %s", p.Format().String(), i.Format().String())
+	}
+
+	return result, nil
+}
+
 func Combine(f1 FormatChecker, f2 FormatChecker) ([]io.Reader, error) {
 	switch f1.Format() {
 	case PDF:
@@ -24,29 +46,28 @@ func Combine(f1 FormatChecker, f2 FormatChecker) ([]io.Reader, error) {
 		return nesWrap(f1.(*Nes), f2)
 	case GIF:
 		return gifWrap(f1.(*Gif), f2)
+	case LITERAL:
+		return binaryWrap(f1.(*Binary), f2)
 	default:
 		return nil, errors.New("unknown fileformat for f1")
 	}
 }
 
+func binaryWrap(b *Binary, f2 FormatChecker) ([]io.Reader, error) {
+	switch f2.Format() {
+	case PDF, ZIP, LITERAL:
+		return tryCombining(b, f2.(Parasite))
+	case PNG, JPG, WASM, NES:
+		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), b.Format().String())
+	default:
+		return nil, errors.New("unknown fileformat for f2")
+	}
+}
+
 func gifWrap(gif *Gif, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
-	case PDF, ZIP:
-		var result []io.Reader
-
-		first, err := gif.Infect(f2.(Parasite))
-		if err != nil {
-			log.Printf("couldn't infect %s with %s skipping", gif.Format().String(), f2.Format().String())
-		}
-
-		result = append(result, bytes.NewReader(first))
-
-		second, err := gif.Attach(f2.(Parasite).Reader())
-		if err != nil {
-			log.Printf("couldn't attach %s to %s", f2.Format().String(), gif.Format().String())
-		}
-
-		return append(result, bytes.NewReader(second)), nil
+	case PDF, ZIP, LITERAL:
+		return tryCombining(gif, f2.(Parasite))
 	case PNG, JPG, WASM, NES:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), gif.Format().String())
 	case GIF:
@@ -58,22 +79,8 @@ func gifWrap(gif *Gif, f2 FormatChecker) ([]io.Reader, error) {
 
 func nesWrap(nes *Nes, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
-	case PDF, ZIP:
-		var result []io.Reader
-
-		first, err := nes.Infect(f2.(Parasite))
-		if err != nil {
-			log.Printf("couldn't infect %s with %s skipping", nes.Format().String(), f2.Format().String())
-		}
-
-		result = append(result, bytes.NewReader(first))
-
-		second, err := nes.Attach(f2.(Parasite).Reader())
-		if err != nil {
-			log.Printf("couldn't attach %s to %s", f2.Format().String(), nes.Format().String())
-		}
-
-		return append(result, bytes.NewReader(second)), nil
+	case PDF, ZIP, LITERAL:
+		return tryCombining(nes, f2.(Parasite))
 	case PNG, JPG, WASM, GIF:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), nes.Format().String())
 	case NES:
@@ -85,22 +92,8 @@ func nesWrap(nes *Nes, f2 FormatChecker) ([]io.Reader, error) {
 
 func wasmWrap(wasm *Wasm, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
-	case PDF, ZIP:
-		var result []io.Reader
-
-		first, err := wasm.Infect(f2.(Parasite))
-		if err != nil {
-			log.Printf("couldn't infect %s with %s skipping", wasm.Format().String(), f2.Format().String())
-		}
-
-		result = append(result, bytes.NewReader(first))
-
-		second, err := wasm.Attach(f2.(Parasite).Reader())
-		if err != nil {
-			log.Printf("couldn't attach %s to %s", f2.Format().String(), wasm.Format().String())
-		}
-
-		return append(result, bytes.NewReader(second)), nil
+	case PDF, ZIP, LITERAL:
+		return tryCombining(wasm, f2.(Parasite))
 	case PNG, JPG, NES, GIF:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), wasm.Format().String())
 	case WASM:
@@ -112,22 +105,8 @@ func wasmWrap(wasm *Wasm, f2 FormatChecker) ([]io.Reader, error) {
 
 func jpgWrap(jpg *Jpg, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
-	case PDF, ZIP:
-		var result []io.Reader
-
-		first, err := jpg.Infect(f2.(Parasite))
-		if err != nil {
-			log.Printf("couldn't infect %s with %s skipping", jpg.Format().String(), f2.Format().String())
-		}
-
-		result = append(result, bytes.NewReader(first))
-
-		second, err := jpg.Attach(f2.(Parasite).Reader())
-		if err != nil {
-			log.Printf("couldn't attach %s to %s", f2.Format().String(), jpg.Format().String())
-		}
-
-		return append(result, bytes.NewReader(second)), nil
+	case PDF, ZIP, LITERAL:
+		return tryCombining(jpg, f2.(Parasite))
 	case PNG, WASM, NES, GIF:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), jpg.Format().String())
 	case JPG:
@@ -139,22 +118,8 @@ func jpgWrap(jpg *Jpg, f2 FormatChecker) ([]io.Reader, error) {
 
 func pngWrap(png *Png, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
-	case PDF, ZIP:
-		var result []io.Reader
-
-		first, err := png.Infect(f2.(Parasite))
-		if err != nil {
-			log.Printf("couldn't infect %s with %s skipping", png.Format().String(), f2.Format().String())
-		}
-
-		result = append(result, bytes.NewReader(first))
-
-		second, err := png.Attach(f2.(Parasite).Reader())
-		if err != nil {
-			log.Printf("couldn't attach %s to %s", f2.Format().String(), png.Format().String())
-		}
-
-		return append(result, bytes.NewReader(second)), nil
+	case PDF, ZIP, LITERAL:
+		return tryCombining(png, f2.(Parasite))
 	case PNG:
 		return nil, errors.New("failed to merge two file of the same type")
 	case JPG, WASM, NES, GIF:
@@ -166,22 +131,8 @@ func pngWrap(png *Png, f2 FormatChecker) ([]io.Reader, error) {
 
 func pdfWrap(pdf *Pdf, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
-	case ZIP, PDF:
-		var result []io.Reader
-
-		first, err := pdf.Infect(f2.(Parasite))
-		if err != nil {
-			log.Printf("couldn't infect %s with %s skipping", pdf.Format().String(), f2.Format().String())
-		}
-
-		result = append(result, bytes.NewReader(first))
-
-		second, err := pdf.Attach(f2.(Parasite).Reader())
-		if err != nil {
-			log.Printf("couldn't attach %s to %s", f2.Format().String(), pdf.Format().String())
-		}
-
-		return append(result, bytes.NewReader(second)), nil
+	case ZIP, PDF, LITERAL:
+		return tryCombining(pdf, f2.(Parasite))
 	case PNG, WASM, JPG, NES, GIF:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), pdf.Format().String())
 	default:
@@ -191,22 +142,8 @@ func pdfWrap(pdf *Pdf, f2 FormatChecker) ([]io.Reader, error) {
 
 func zipWrap(z *Zip, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
-	case PDF:
-		var result []io.Reader
-
-		first, err := z.Infect(f2.(Parasite))
-		if err != nil {
-			log.Printf("couldn't infect PDF with ZIP skipping")
-		}
-
-		result = append(result, bytes.NewReader(first))
-
-		second, err := z.Attach(f2.(Parasite).Reader())
-		if err != nil {
-			log.Printf("couldn't attach zip to pdf")
-		}
-
-		return append(result, bytes.NewReader(second)), nil
+	case PDF, LITERAL:
+		return tryCombining(z, f2.(Parasite))
 	case ZIP:
 		return nil, errors.New("failed to merge two files of the same type")
 	case WASM, PNG, JPG, NES, GIF:

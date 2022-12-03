@@ -1,21 +1,21 @@
 package formats
 
 import (
-	"errors"
 	"io"
+	"log"
 )
 
 type FileFormat int
 
 const (
-	PDF  FileFormat = 0x1
-	ZIP  FileFormat = 0x2
-	PNG  FileFormat = 0x3
-	JPG  FileFormat = 0x4
-	WASM FileFormat = 0x5
-	NES  FileFormat = 0x6
-	GIF  FileFormat = 0x7
-	LAST FileFormat = 0x8
+	PDF     FileFormat = 0x1
+	ZIP     FileFormat = 0x2
+	PNG     FileFormat = 0x3
+	JPG     FileFormat = 0x4
+	WASM    FileFormat = 0x5
+	NES     FileFormat = 0x6
+	GIF     FileFormat = 0x7
+	LITERAL FileFormat = 0x8
 )
 
 func (f FileFormat) String() string {
@@ -34,6 +34,8 @@ func (f FileFormat) String() string {
 		return "nes"
 	case GIF:
 		return "gif"
+	case LITERAL:
+		return "binary-literal"
 	default:
 		panic("unknown fileformat")
 	}
@@ -47,9 +49,20 @@ type Attacher interface {
 	Attach(reader io.Reader) ([]byte, error)
 }
 
+type Infectable interface {
+	Infect(file Parasite) ([]byte, error)
+}
+
+type C interface {
+	Infectable
+	Attacher
+	FormatChecker
+}
+
 type Parasite interface {
 	IsParasite() bool
 	Reader() io.Reader
+	FormatChecker
 }
 
 func Find(f []byte) (FormatChecker, error) {
@@ -88,5 +101,6 @@ func Find(f []byte) (FormatChecker, error) {
 		return g, nil
 	}
 
-	return nil, errors.New("no such format is registered")
+	log.Printf("didn't matched any file formats, defaulting as identying the file as binary\n")
+	return NewBinary(f)
 }
