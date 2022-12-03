@@ -12,7 +12,8 @@ const (
 	ZIP  FileFormat = 0x2
 	PNG  FileFormat = 0x3
 	JPG  FileFormat = 0x4
-	LAST FileFormat = 0x5
+	WASM FileFormat = 0x5
+	LAST FileFormat = 0x6
 )
 
 func (f FileFormat) String() string {
@@ -25,6 +26,8 @@ func (f FileFormat) String() string {
 		return "png"
 	case JPG:
 		return "jpg"
+	case WASM:
+		return "wasm"
 	default:
 		panic("unknown fileformat")
 	}
@@ -62,6 +65,11 @@ func Find(f []byte) (FormatChecker, error) {
 	j, err := NewJpg(f)
 	if err == nil {
 		return j, nil
+	}
+
+	w, err := NewWasm(f)
+	if err == nil {
+		return w, nil
 	}
 
 	return nil, errors.New("no such format is registered")

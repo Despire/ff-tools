@@ -31,7 +31,7 @@ func (z *Zip) Infect(file Parasite) ([]byte, error) {
 	writer := zip.NewWriter(out)
 
 	header, err := writer.CreateHeader(&zip.FileHeader{
-		Name:   "",        // it's allowed to not name the file.
+		Name:   ".",
 		Method: zip.Store, // don't compress store as raw contents.
 	})
 
