@@ -13,7 +13,9 @@ const (
 	PNG  FileFormat = 0x3
 	JPG  FileFormat = 0x4
 	WASM FileFormat = 0x5
-	LAST FileFormat = 0x6
+	NES  FileFormat = 0x6
+	GIF  FileFormat = 0x7
+	LAST FileFormat = 0x8
 )
 
 func (f FileFormat) String() string {
@@ -28,6 +30,10 @@ func (f FileFormat) String() string {
 		return "jpg"
 	case WASM:
 		return "wasm"
+	case NES:
+		return "nes"
+	case GIF:
+		return "gif"
 	default:
 		panic("unknown fileformat")
 	}
@@ -70,6 +76,16 @@ func Find(f []byte) (FormatChecker, error) {
 	w, err := NewWasm(f)
 	if err == nil {
 		return w, nil
+	}
+
+	n, err := NewNes(f)
+	if err == nil {
+		return n, nil
+	}
+
+	g, err := NewGif(f)
+	if err == nil {
+		return g, nil
 	}
 
 	return nil, errors.New("no such format is registered")
