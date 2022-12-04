@@ -48,8 +48,23 @@ func Combine(f1 FormatChecker, f2 FormatChecker) ([]io.Reader, error) {
 		return gifWrap(f1.(*Gif), f2)
 	case LITERAL:
 		return binaryWrap(f1.(*Binary), f2)
+	case MP3:
+		return mp3Wrap(f1.(*Mp3), f2)
 	default:
 		return nil, errors.New("unknown fileformat for f1")
+	}
+}
+
+func mp3Wrap(m *Mp3, f2 FormatChecker) ([]io.Reader, error) {
+	switch f2.Format() {
+	case PDF, ZIP, LITERAL:
+		return tryCombining(m, f2.(Parasite))
+	case PNG, JPG, WASM, NES:
+		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), m.Format().String())
+	case MP3:
+		return nil, errors.New("failed to merge file of the same type")
+	default:
+		return nil, errors.New("unknown fileformat for f2")
 	}
 }
 
@@ -57,7 +72,7 @@ func binaryWrap(b *Binary, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
 	case PDF, ZIP, LITERAL:
 		return tryCombining(b, f2.(Parasite))
-	case PNG, JPG, WASM, NES:
+	case PNG, JPG, WASM, NES, MP3:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), b.Format().String())
 	default:
 		return nil, errors.New("unknown fileformat for f2")
@@ -68,7 +83,7 @@ func gifWrap(gif *Gif, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
 	case PDF, ZIP, LITERAL:
 		return tryCombining(gif, f2.(Parasite))
-	case PNG, JPG, WASM, NES:
+	case PNG, JPG, WASM, NES, MP3:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), gif.Format().String())
 	case GIF:
 		return nil, errors.New("failed to merge file of the same type")
@@ -81,7 +96,7 @@ func nesWrap(nes *Nes, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
 	case PDF, ZIP, LITERAL:
 		return tryCombining(nes, f2.(Parasite))
-	case PNG, JPG, WASM, GIF:
+	case PNG, JPG, WASM, GIF, MP3:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), nes.Format().String())
 	case NES:
 		return nil, errors.New("failed to merge file of the same type")
@@ -94,7 +109,7 @@ func wasmWrap(wasm *Wasm, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
 	case PDF, ZIP, LITERAL:
 		return tryCombining(wasm, f2.(Parasite))
-	case PNG, JPG, NES, GIF:
+	case PNG, JPG, NES, GIF, MP3:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), wasm.Format().String())
 	case WASM:
 		return nil, errors.New("failed to merge file of the same type")
@@ -107,7 +122,7 @@ func jpgWrap(jpg *Jpg, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
 	case PDF, ZIP, LITERAL:
 		return tryCombining(jpg, f2.(Parasite))
-	case PNG, WASM, NES, GIF:
+	case PNG, WASM, NES, GIF, MP3:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), jpg.Format().String())
 	case JPG:
 		return nil, errors.New("failed to merge two file of the same type")
@@ -122,7 +137,7 @@ func pngWrap(png *Png, f2 FormatChecker) ([]io.Reader, error) {
 		return tryCombining(png, f2.(Parasite))
 	case PNG:
 		return nil, errors.New("failed to merge two file of the same type")
-	case JPG, WASM, NES, GIF:
+	case JPG, WASM, NES, GIF, MP3:
 		return nil, fmt.Errorf("%s requires offset at 0 can't inject or attach to %s", f2.Format().String(), png.Format().String())
 	default:
 		return nil, errors.New("unknown fileformat for f2")
@@ -133,7 +148,7 @@ func pdfWrap(pdf *Pdf, f2 FormatChecker) ([]io.Reader, error) {
 	switch f2.Format() {
 	case ZIP, PDF, LITERAL:
 		return tryCombining(pdf, f2.(Parasite))
-	case PNG, WASM, JPG, NES, GIF:
+	case PNG, WASM, JPG, NES, GIF, MP3:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), pdf.Format().String())
 	default:
 		return nil, errors.New("unknown fileformat for f2")
@@ -146,7 +161,7 @@ func zipWrap(z *Zip, f2 FormatChecker) ([]io.Reader, error) {
 		return tryCombining(z, f2.(Parasite))
 	case ZIP:
 		return nil, errors.New("failed to merge two files of the same type")
-	case WASM, PNG, JPG, NES, GIF:
+	case WASM, PNG, JPG, NES, GIF, MP3:
 		return nil, fmt.Errorf("%s requires offset at 0 can't attach or inject into %s", f2.Format().String(), z.Format().String())
 	default:
 		return nil, errors.New("unknown fileformat for f2")

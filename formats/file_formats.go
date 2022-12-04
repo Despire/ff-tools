@@ -16,6 +16,7 @@ const (
 	NES     FileFormat = 0x6
 	GIF     FileFormat = 0x7
 	LITERAL FileFormat = 0x8
+	MP3     FileFormat = 0x9
 )
 
 func (f FileFormat) String() string {
@@ -36,6 +37,8 @@ func (f FileFormat) String() string {
 		return "gif"
 	case LITERAL:
 		return "binary-literal"
+	case MP3:
+		return "mp3"
 	default:
 		panic("unknown fileformat")
 	}
@@ -99,6 +102,11 @@ func Find(f []byte) (FormatChecker, error) {
 	g, err := NewGif(f)
 	if err == nil {
 		return g, nil
+	}
+
+	m, err := NewMp3(f)
+	if err == nil {
+		return m, nil
 	}
 
 	log.Printf("didn't matched any file formats, defaulting as identying the file as binary\n")
