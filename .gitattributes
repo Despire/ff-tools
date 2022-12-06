@@ -1,3 +1,1 @@
-examples/*/* filter=lfs diff=lfs merge=lfs -text
-examples/* filter=lfs diff=lfs merge=lfs -text
 examples/mac-os/alpine-standard-3.16.2-aarch64.iso filter=lfs diff=lfs merge=lfs -text
