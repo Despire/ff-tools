@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/hex"
 	"errors"
 	"io"
 	"os"
 )
 
-func EncryptRaw(plaintext []byte, key string, iv []byte) ([]byte, error) {
+func EncryptRaw(plaintext []byte, key []byte, iv []byte) ([]byte, error) {
 	//plaintext, err := pkcs7Pad(plaintext, aes.BlockSize)
 	//if err != nil {
 	//	return nil, err
@@ -19,7 +20,7 @@ func EncryptRaw(plaintext []byte, key string, iv []byte) ([]byte, error) {
 		return nil, errors.New("plaintext is not a multiple of the block size")
 	}
 
-	block, err := aes.NewCipher([]byte(key))
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +34,11 @@ func EncryptRaw(plaintext []byte, key string, iv []byte) ([]byte, error) {
 }
 
 func Encrypt(args []string, iv []byte) error {
-	key := args[0]
+	key, err := hex.DecodeString(args[0])
+	if err != nil {
+		return err
+	}
+
 	file := args[1]
 
 	fd, err := os.Open(file)

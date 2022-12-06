@@ -3,14 +3,15 @@ package crypto
 import (
 	"crypto/aes"
 	"crypto/cipher"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 )
 
-func DecryptRaw(ciphertext []byte, key string, iv []byte) ([]byte, error) {
-	block, err := aes.NewCipher([]byte(key))
+func DecryptRaw(ciphertext []byte, key []byte, iv []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
 	if err != nil {
 		return nil, err
 	}
@@ -34,15 +35,15 @@ func DecryptRaw(ciphertext []byte, key string, iv []byte) ([]byte, error) {
 }
 
 func Decrypt(args []string, iv []byte) error {
-	key := args[0]
+	key, err := hex.DecodeString(args[0])
+	if err != nil {
+		return err
+	}
 	file := args[1]
 
 	fd, err := os.Open(file)
-	if errors.Is(err, os.ErrNotExist) {
-		fd, err = os.Create(file)
-		if err != nil {
-			return err
-		}
+	if err != nil {
+		return err
 	}
 
 	ciphertext, err := io.ReadAll(fd)
