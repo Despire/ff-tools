@@ -41,7 +41,7 @@ func PdfToWasm(args []string) error {
 
 	wasmData = append(wasmData, 0x0)
 	//wasmData = append(wasmData, algo.ToLEB128(uint64(len("\nendstream\nendobj\n"))+uint64(len(pdfdata)))...)
-	wasmData = append(wasmData, algo.ToLEB128(547)...)
+	wasmData = append(wasmData, algo.ToLEB128(547)...) // this is added manually
 
 	if len(wasmData)%aes.BlockSize != 0 {
 		m := aes.BlockSize - (len(wasmData) % aes.BlockSize)
