@@ -1,1 +1,5 @@
-the examples are self-signed on M1 macbook! will not work 100% on others.
+0.html.pdf.script.zip
+ - a valid zip
+ - a valid pdf
+ - a valid html
+ - a valid applescript
